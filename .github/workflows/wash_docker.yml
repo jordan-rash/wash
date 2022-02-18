@@ -68,7 +68,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: 'Dockerfile'
-          push: ${{ github.repository }} == 'wasmcloud/wash'
+          push: ${{ github.repository == 'wasmcloud/wash' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - 
