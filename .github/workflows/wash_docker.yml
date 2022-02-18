@@ -58,7 +58,7 @@ jobs:
         with:
           file: 'Dockerfile'
           push: ${{ github.repository }} == 'wasmcloud/wash'
-          target: builder
+          target: release-alpine
           tags: |
             wasmcloud/wash:alpine
           labels: ${{ steps.meta.outputs.labels }}
