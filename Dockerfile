@@ -28,7 +28,6 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
-COPY --from=builder /lib/ld-musl-x86_64.so.* /lib/
 COPY --from=builder /usr/lib/libssl.so.* /usr/lib/
 COPY --from=builder /usr/lib/libcrypto.so.* /usr/lib/
 COPY --from=builder /usr/lib/libgcc_s.so.* /usr/lib/
@@ -36,6 +35,7 @@ COPY --from=builder /lib/ld-musl-x86_64.so.* /lib/
 
 COPY --from=builder /build/target/release/wash /usr/local/bin/
 
+USER user
 WORKDIR /app
 
 FROM scratch
@@ -44,7 +44,6 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
-COPY --from=builder /lib/ld-musl-x86_64.so.* /lib/
 COPY --from=builder /usr/lib/libssl.so.* /usr/lib/
 COPY --from=builder /usr/lib/libcrypto.so.* /usr/lib/
 COPY --from=builder /usr/lib/libgcc_s.so.* /usr/lib/
