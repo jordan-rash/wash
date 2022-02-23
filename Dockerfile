@@ -14,9 +14,9 @@ COPY ./src ./src
 RUN adduser \    
     --disabled-password \    
     --gecos "" \    
-    --home "/nonexistent" \    
-    --shell "/sbin/nologin" \    
-    --no-create-home \    
+    --home "/home/user" \    
+    --shell "/sbin/nologin" \
+    --no-create-home \
     --uid "10001" \    
     "user"
 
@@ -24,19 +24,15 @@ ENV RUSTFLAGS=-Ctarget-feature=-crt-static
 RUN cargo build --release
 
 FROM alpine as release-alpine
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+WORKDIR /home/user
+RUN apk add --no-cache bash libgcc libressl-dev ca-certificates musl-dev
+
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 
-COPY --from=builder /usr/lib/libssl.so.* /usr/lib/
-COPY --from=builder /usr/lib/libcrypto.so.* /usr/lib/
-COPY --from=builder /usr/lib/libgcc_s.so.* /usr/lib/
-COPY --from=builder /lib/ld-musl-x86_64.so.* /lib/
-
 COPY --from=builder /build/target/release/wash /usr/local/bin/
 
-USER user
-WORKDIR /app
+USER user:user
 
 FROM scratch
 
