@@ -2,69 +2,72 @@
   description = "wash - WASMCloud Shell";
 
   inputs = {
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-unstable;
-    flakeutils.url = "github:numtide/flake-utils";
-    naersk.url = "github:nmattia/naersk";
+    flakeutils.url       = "github:numtide/flake-utils";
+    nixpkgs.url          = "github:NixOS/nixpkgs/nixos-unstable";
+    naersk.url           = "github:nix-community/naersk";
+    # pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   };
 
   outputs = { self, nixpkgs, flakeutils, naersk }:
     flakeutils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages."${system}";
-        naersk-lib = naersk.lib."${system}";
-      in
-      rec {
-        packages.wash = naersk-lib.buildPackage {
-          pname = "wash";
-          src = self;
+        pkgs        = (import nixpkgs) { inherit system; };
+        naersk'     = pkgs.callPackage naersk {};
+	cargoConfig = builtins.fromTOML(builtins.readFile(./Cargo.toml));
+	name        = cargoConfig.package.name;
+        # pre-commit  = pre-commit-hooks.lib."${system}".run;
+
+      in rec {
+        packages.${name} = naersk'.buildPackage {
+          pname = "${name}";
           root = ./.;
 
           # Workaround for lack of a naersk option to select --bin target.
-          # See https://github.com/nmattia/naersk/issues/127
           singleStep = true;
           cargoBuildOptions = (opts: opts ++ ["--bin=wash"]);
 
-          buildInputs = with pkgs; [
+	  nativeBuildInputs = with pkgs; [
             pkgconfig
             clang
+            grpc-tools
+	  ];
+
+          buildInputs = with pkgs; [
             llvmPackages.libclang
           ];
+
           propagatedBuildInputs = with pkgs; [
             openssl
           ];
+
           runtimeDependencies = with pkgs; [
             openssl
           ];
 
+
           # Allow build step to find libclang.so path.
           LD_LIBRARY_PATH = "${pkgs.llvmPackages.libclang}/lib/";
         };
+        
 
-        defaultPackage = packages.wash;
-
-        apps.wash = flakeutils.lib.mkApp {
+#        checks = {
+ #         build = self.defaultPackage.${system};
+  #        pre-commit-check = pre-commit {
+   #         src = ./.;
+    #        hooks = {
+#              nixfmt.enable = true;
+ #             rustfmt.enable = true;
+  #            cargo-check.enable = true;
+   #         };
+    #      };
+     #   };
+   	
+	packages.default = packages.${name};
+	defaultPackage = packages.${name};
+	
+	apps.wash = flakeutils.lib.mkApp {
           drv = packages.wash;
         };
         defaultApp = apps.wash;
-
-        devShell = pkgs.stdenv.mkDerivation {
-          name = "wash";
-          src = self;
-          buildInputs = with pkgs; [
-            pkgconfig
-            rustc
-            cargo
-            clang
-            llvmPackages.libclang
-          ];
-          propagatedBuildInputs = with pkgs; [
-            openssl
-          ];
-
-          RUST_BACKTRACE = "1";
-          # Allow build step to find libclang.so path.
-          LD_LIBRARY_PATH = "${pkgs.llvmPackages.libclang}/lib/";
-        };
-      }
-    );
+      });
 }
