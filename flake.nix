@@ -5,7 +5,6 @@
     flakeutils.url       = "github:numtide/flake-utils";
     nixpkgs.url          = "github:NixOS/nixpkgs/nixos-unstable";
     naersk.url           = "github:nix-community/naersk";
-    # pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   };
 
   outputs = { self, nixpkgs, flakeutils, naersk }:
@@ -14,8 +13,10 @@
         pkgs        = (import nixpkgs) { inherit system; };
         naersk'     = pkgs.callPackage naersk {};
 	cargoConfig = builtins.fromTOML(builtins.readFile(./Cargo.toml));
-	name        = cargoConfig.package.name;
-        # pre-commit  = pre-commit-hooks.lib."${system}".run;
+	name        = "wash";
+
+	supportedSystems = [ "x86_64-darwin" "aarch64-linux" ];
+        forAllSystems = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
 
       in rec {
         packages.${name} = naersk'.buildPackage {
@@ -50,24 +51,10 @@
         };
         
 
-#        checks = {
- #         build = self.defaultPackage.${system};
-  #        pre-commit-check = pre-commit {
-   #         src = ./.;
-    #        hooks = {
-#              nixfmt.enable = true;
- #             rustfmt.enable = true;
-  #            cargo-check.enable = true;
-   #         };
-    #      };
-     #   };
-   	
 	packages.default = packages.${name};
-	defaultPackage = packages.${name};
 	
-	apps.wash = flakeutils.lib.mkApp {
-          drv = packages.wash;
+	apps.${name} = flakeutils.lib.mkApp {
+          drv = packages.${name};
         };
-        defaultApp = apps.wash;
       });
 }
